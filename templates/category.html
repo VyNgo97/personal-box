@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% set current_category = category_name %}
+{% block title %}{{ category_name }} — Newsletters{% endblock %}
+
+{% block content %}
+<h1 class="page-title">
+  <span class="cat-badge cat-{{ category_name }}">{{ category_name }}</span>
+  &nbsp;Newsletters
+</h1>
+
+{% if start and end %}
+<p style="color:#6b6b6b;margin-bottom:16px;font-size:13px;">
+  Filtered: {{ start }} → {{ end }}
+  <a href="/category/{{ category_name }}" style="margin-left:8px">[clear]</a>
+</p>
+{% endif %}
+
+{% if not newsletters %}
+  <p style="color:#6b6b6b">No newsletters found.</p>
+{% endif %}
+
+<ul class="nl-list">
+  {% for nl in newsletters %}
+  <li class="nl-item {% if not nl.is_read %}unread{% endif %}">
+    <a class="nl-subject" href="/newsletter/{{ nl.id | urlencode }}">{{ nl.subject }}</a>
+    <div class="nl-meta">
+      <span>{{ nl.sender_name }}</span>
+      <span>{{ nl.date[:10] }}</span>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+
+<div class="pagination">
+  {% if page > 1 %}
+  <a class="btn btn-secondary"
+     href="/category/{{ category_name }}?page={{ page - 1 }}{% if start %}&start={{ start }}{% endif %}{% if end %}&end={{ end }}{% endif %}">
+    ← Previous
+  </a>
+  {% endif %}
+  {% if has_next %}
+  <a class="btn btn-secondary"
+     href="/category/{{ category_name }}?page={{ page + 1 }}{% if start %}&start={{ start }}{% endif %}{% if end %}&end={{ end }}{% endif %}">
+    Next →
+  </a>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Newsletter Viewer{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    📰 Newsletters
+  </div>
+
+  <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
+    All Recent
+  </a>
+
+  <div class="sidebar-section">Categories</div>
+
+  {% for cat in categories %}
+  <a href="/category/{{ cat.category }}"
+     class="nav-link {% if request.url.path == '/category/' ~ cat.category %}active{% endif %}">
+    {{ cat.category }}
+    <span class="badge">{{ cat.count }}</span>
+  </a>
+  {% endfor %}
+
+  <form class="date-filter" action="/category/{{ current_category | default('') }}" method="get"
+        id="date-form">
+    <label>Date Range</label>
+    <input type="date" name="start" value="{{ start | default('') }}" placeholder="From">
+    <input type="date" name="end" value="{{ end | default('') }}" placeholder="To">
+    <button type="submit" class="btn btn-secondary">Filter</button>
+  </form>
+
+  <button class="btn btn-primary btn-sync" onclick="triggerSync()">⟳ Sync Now</button>
+</aside>
+
+<main class="main">
+  {% block content %}{% endblock %}
+</main>
+
+<div id="sync-status"></div>
+
+<script>
+async function triggerSync() {
+  const el = document.getElementById('sync-status');
+  el.textContent = 'Syncing…';
+  el.style.display = 'block';
+  try {
+    const res = await fetch('/sync', { method: 'POST' });
+    const data = await res.json();
+    el.textContent = data.status === 'ok'
+      ? '✓ ' + (data.message || 'Sync complete')
+      : '✗ ' + (data.message || 'Sync failed');
+    setTimeout(() => { el.style.display = 'none'; if (data.status === 'ok') location.reload(); }, 3000);
+  } catch (e) {
+    el.textContent = '✗ Network error';
+    setTimeout(() => { el.style.display = 'none'; }, 3000);
+  }
+}
+</script>
+
+</body>
+</html>

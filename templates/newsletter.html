@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ nl.subject }}{% endblock %}
+
+{% block content %}
+<div class="nl-header">
+  <h1>{{ nl.subject }}</h1>
+  <div class="meta-row">
+    <span><strong>From:</strong> {{ nl.sender_name }} &lt;{{ nl.sender_email }}&gt;</span>
+    <span><strong>Date:</strong> {{ nl.date[:10] }}</span>
+    <span class="cat-badge cat-{{ nl.category }}">{{ nl.category }}</span>
+    <a href="/category/{{ nl.category }}" style="font-size:12px">← Back to {{ nl.category }}</a>
+  </div>
+</div>
+
+{% if nl.html_body %}
+<iframe
+  class="nl-frame"
+  src="/raw/{{ nl.id | urlencode }}"
+  sandbox="allow-same-origin allow-popups"
+  title="{{ nl.subject }}"
+  loading="lazy">
+</iframe>
+{% else %}
+<div style="background:#fff;border:1px solid #e5e5e3;border-radius:6px;padding:24px;white-space:pre-wrap;font-family:monospace;font-size:13px;line-height:1.6;overflow-x:auto;">{{ nl.text_body }}</div>
+{% endif %}
+{% endblock %}

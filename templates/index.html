@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Recent Newsletters{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Recent Newsletters <small style="font-size:14px;font-weight:400;color:#6b6b6b">(last 30 days)</small></h1>
+
+{% if not grouped %}
+  <p style="color:#6b6b6b">No newsletters yet. Click <strong>Sync Now</strong> to fetch emails.</p>
+{% endif %}
+
+{% for category, items in grouped.items() %}
+<h2 class="category-heading">
+  <span class="cat-badge cat-{{ category }}">{{ category }}</span>
+  <a href="/category/{{ category }}" style="font-size:13px;font-weight:400">view all →</a>
+</h2>
+
+<ul class="nl-list">
+  {% for nl in items[:10] %}
+  <li class="nl-item {% if not nl.is_read %}unread{% endif %}">
+    <a class="nl-subject" href="/newsletter/{{ nl.id | urlencode }}">{{ nl.subject }}</a>
+    <div class="nl-meta">
+      <span>{{ nl.sender_name }}</span>
+      <span>{{ nl.date[:10] }}</span>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+
+{% if items | length > 10 %}
+<p style="margin-top:8px;font-size:13px;">
+  <a href="/category/{{ category }}">+ {{ items | length - 10 }} more in {{ category }}</a>
+</p>
+{% endif %}
+
+{% endfor %}
+{% endblock %}

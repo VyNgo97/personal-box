@@ -1,0 +1,81 @@
+# Category rules — matched in order (first match wins).
+# Each rule is matched against the sender's email address (full or substring).
+# More specific rules (subdomains, substrings) should come before broader ones.
+
+categories:
+  AI:
+    - tldr.tech/ai
+    - bensbites.co
+    - therundown.ai
+    - aibreakfast.com
+    - importai.net
+    - thealgorithmicbridge.com
+
+  Tech:
+    - tldr.tech
+    - hackernewsletter.com
+    - javascriptweekly.com
+    - frontendfocus.cc
+    - nodeweekly.com
+    - pycoders.com
+    - pythonweekly.com
+    - softwareleadweekly.com
+    - stratechery.com
+
+  Finance:
+    - morningbrew.com/money
+    - milkroad.com
+    - financetwits.com
+    - marketwatch.com
+    - seekingalpha.com
+
+  Business:
+    - morningbrew.com
+    - thehustle.co
+    - growthhackers.com
+    - entrepreneurshandbook.co
+
+  Health:
+    - examine.com
+    - hubermanlab.com
+    - foundmyfitness.com
+
+  News:
+    - theatlantic.com
+    - nytimes.com
+    - economist.com
+    - axios.com
+
+# Subject keyword fallback — used when no sender rule matches.
+# Maps keywords (case-insensitive) to categories.
+subject_keywords:
+  AI:
+    - artificial intelligence
+    - machine learning
+    - large language model
+    - llm
+    - gpt
+    - openai
+    - anthropic
+
+  Tech:
+    - developer
+    - programming
+    - software
+    - javascript
+    - python
+    - open source
+
+  Finance:
+    - investing
+    - stocks
+    - crypto
+    - bitcoin
+    - market
+
+  Business:
+    - startup
+    - entrepreneur
+    - growth
+    - revenue
+    - saas
