@@ -15,9 +15,9 @@ from datetime import datetime, timezone
 import requests
 from dotenv import load_dotenv
 
-from categorize import categorize
-from db import get_sync_state, init_db, set_sync_state, upsert_newsletter
-from ms_auth import get_access_token
+from .categorize import categorize
+from .db import get_sync_state, init_db, set_sync_state, upsert_newsletter
+from .ms_auth import get_access_token
 
 load_dotenv()
 

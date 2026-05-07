@@ -4,6 +4,7 @@ FastAPI local newsletter viewer.
 Run with:
     uv run uvicorn app:app --reload --port 8765
 """
+import asyncio
 import subprocess
 import sys
 from datetime import date, timedelta
@@ -14,7 +15,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from db import (
+from .db import (
     get_by_category,
     get_by_date_range,
     get_categories_with_counts,
@@ -23,12 +24,16 @@ from db import (
     init_db,
     mark_read,
 )
+from .ms_auth import get_access_token
 
 app = FastAPI(title="Personal Newsletter Viewer")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 init_db()
+
+# Auth flow state: "idle" | "pending" | "done" | "failed"
+_auth_state: dict = {"status": "idle", "user_code": None, "verification_uri": None, "error": None}
 
 
 def _sidebar_data() -> dict:
@@ -110,10 +115,62 @@ async def raw_view(id: str):
     return HTMLResponse(content=body)
 
 
+@app.get("/auth/status")
+async def auth_status():
+    try:
+        await asyncio.to_thread(get_access_token, False)
+        return {"authenticated": True}
+    except RuntimeError:
+        return {"authenticated": False}
+
+
+@app.post("/auth/start")
+async def auth_start():
+    import os
+    import msal
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    if _auth_state["status"] == "pending":
+        return {
+            "user_code": _auth_state["user_code"],
+            "verification_uri": _auth_state["verification_uri"],
+        }
+
+    client_id = os.getenv("GRAPH_CLIENT_ID")
+    if not client_id:
+        raise HTTPException(status_code=500, detail="GRAPH_CLIENT_ID not set")
+
+    from .ms_auth import AUTHORITY, SCOPES, _load_cache, _save_cache
+    cache = _load_cache()
+    msal_app = msal.PublicClientApplication(client_id, authority=AUTHORITY, token_cache=cache)
+    flow = msal_app.initiate_device_flow(scopes=SCOPES)
+    if "user_code" not in flow:
+        raise HTTPException(status_code=500, detail=flow.get("error_description", "Failed to start auth"))
+
+    _auth_state.update(status="pending", user_code=flow["user_code"], verification_uri=flow["verification_uri"], error=None)
+
+    async def _poll():
+        result = await asyncio.to_thread(msal_app.acquire_token_by_device_flow, flow)
+        if "access_token" in result:
+            _save_cache(cache)
+            _auth_state.update(status="done", user_code=None, verification_uri=None)
+        else:
+            _auth_state.update(status="failed", error=result.get("error_description", "Auth failed"))
+
+    asyncio.create_task(_poll())
+    return {"user_code": flow["user_code"], "verification_uri": flow["verification_uri"]}
+
+
+@app.get("/auth/poll")
+async def auth_poll():
+    return {"status": _auth_state["status"], "error": _auth_state.get("error")}
+
+
 @app.post("/sync")
 async def sync_newsletters(full: bool = False):
     try:
-        cmd = [sys.executable, "ingest.py"]
+        cmd = [sys.executable, "-m", "personal_box.ingest"]
         if full:
             cmd.append("--full")
         result = subprocess.run(

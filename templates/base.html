@@ -36,7 +36,19 @@
   </form>
 
   <button class="btn btn-primary btn-sync" onclick="triggerSync()">⟳ Sync Now</button>
+  <button class="btn btn-secondary btn-auth" id="auth-btn" onclick="triggerAuth()" style="display:none">🔑 Sign In</button>
 </aside>
+
+<div id="auth-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:8px;padding:2rem;max-width:400px;width:90%;text-align:center">
+    <h3 style="margin:0 0 1rem">Sign in to Microsoft</h3>
+    <p style="margin:0 0 .5rem;font-size:.9rem;color:#555">Go to the URL below and enter your code:</p>
+    <a id="auth-url" href="#" target="_blank" style="display:block;margin:.5rem 0;font-weight:600"></a>
+    <div style="font-size:1.5rem;font-weight:700;letter-spacing:.2em;margin:1rem 0;padding:.75rem;background:#f5f5f5;border-radius:6px" id="auth-code"></div>
+    <p id="auth-modal-status" style="color:#888;font-size:.85rem">Waiting for sign-in…</p>
+    <button onclick="closeAuthModal()" class="btn btn-secondary" style="margin-top:.5rem">Cancel</button>
+  </div>
+</div>
 
 <main class="main">
   {% block content %}{% endblock %}
@@ -61,6 +73,42 @@ async function triggerSync() {
     setTimeout(() => { el.style.display = 'none'; }, 3000);
   }
 }
+
+let _authPollInterval = null;
+
+async function triggerAuth() {
+  const res = await fetch('/auth/start', { method: 'POST' });
+  const data = await res.json();
+  document.getElementById('auth-code').textContent = data.user_code;
+  document.getElementById('auth-url').textContent = data.verification_uri;
+  document.getElementById('auth-url').href = data.verification_uri;
+  document.getElementById('auth-modal-status').textContent = 'Waiting for sign-in…';
+  document.getElementById('auth-modal').style.display = 'flex';
+
+  _authPollInterval = setInterval(async () => {
+    const poll = await fetch('/auth/poll').then(r => r.json());
+    if (poll.status === 'done') {
+      clearInterval(_authPollInterval);
+      document.getElementById('auth-modal-status').textContent = '✓ Signed in!';
+      setTimeout(() => { document.getElementById('auth-modal').style.display = 'none'; checkAuth(); }, 1500);
+    } else if (poll.status === 'failed') {
+      clearInterval(_authPollInterval);
+      document.getElementById('auth-modal-status').textContent = '✗ ' + (poll.error || 'Auth failed');
+    }
+  }, 2000);
+}
+
+function closeAuthModal() {
+  clearInterval(_authPollInterval);
+  document.getElementById('auth-modal').style.display = 'none';
+}
+
+async function checkAuth() {
+  const res = await fetch('/auth/status').then(r => r.json());
+  document.getElementById('auth-btn').style.display = res.authenticated ? 'none' : 'block';
+}
+
+checkAuth();
 </script>
 
 </body>

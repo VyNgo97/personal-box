@@ -4,6 +4,10 @@ You are a newsletter classifier. Given a single newsletter's sender and subject 
 - Politics
 - Business & Markets
 - Technology
+- Sports
+- Cars
+- Gaming
+- Science
 
 Rules:
 1. Assign exactly one category — the best fit, even if imperfect.

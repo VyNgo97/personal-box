@@ -1,4 +1,5 @@
 from pathlib import Path
+from enum import Enum
 
 from dotenv import load_dotenv
 from jinja2 import Template
@@ -12,7 +13,6 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 _prompt_template: Template | None = None
 
-
 def _get_template() -> Template:
     global _prompt_template
     if _prompt_template is None:
@@ -20,12 +20,19 @@ def _get_template() -> Template:
         _prompt_template = Template(path.read_text())
     return _prompt_template
 
+class Category(str, Enum):
+    WORLD = "World"
+    TECHNOLOGY = "Technology"
+    POLITICS = "Politics"
+    BUSINESS = "Business"
+    SPORTS = "Sports"
+
 
 class CategoryMapping(BaseModel):
-    category: str
+    category: Category
 
 
-def categorize(sender_email: str, sender_name: str, subject: str) -> str:
+def categorize(sender_email: str, sender_name: str, subject: str) -> Category:
     prompt = _get_template().render(
         sender_email=sender_email,
         sender_name=sender_name,
